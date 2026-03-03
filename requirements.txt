@@ -1,0 +1,25 @@
+# FastAPI and Server
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
+# MongoDB
+motor==3.3.2
+pymongo==4.6.1
+
+# Email
+resend==0.8.0
+
+# Environment Variables
+python-dotenv==1.0.0
+
+# Validation
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# CORS
+starlette==0.35.1
+
+# Async
+httpx==0.26.0
+

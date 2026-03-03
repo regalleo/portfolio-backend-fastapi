@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  portfolio-backend:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017
+      - MONGODB_DATABASE=portfolio_db
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL:hello@rajshekhar.live}
+      - CORS_ORIGIN=https://raj-shekhar-portfolio.netlify.app
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo:7.0
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: portfolio_db
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:
+
