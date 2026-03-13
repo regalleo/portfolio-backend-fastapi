@@ -1,13 +1,17 @@
-from fastapi import APIRouter, HTTPException, status, File, UploadFile, Form
+from fastapi import APIRouter, HTTPException, status, File, UploadFile, Form, Depends
 from typing import List, Optional
 import asyncio
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.contact import Contact, ContactCreate, InterestRequest
 from app.services.contact_service import ContactService
 from app.services.email_service import EmailService
+from app.config.database import get_db
 
 router = APIRouter()
-contact_service = ContactService()
-email_service = EmailService()
+
+
+def get_contact_service(db: AsyncSession = Depends(get_db)) -> ContactService:
+    return ContactService(db)
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
@@ -16,7 +20,8 @@ async def submit_contact(
     email: str = Form(...),
     subject: Optional[str] = Form(None),
     message: str = Form(...),
-    file: Optional[UploadFile] = File(None)
+    file: Optional[UploadFile] = File(None),
+    service: ContactService = Depends(get_contact_service)
 ):
     """Submit contact form with optional file upload"""
     try:
@@ -34,9 +39,10 @@ async def submit_contact(
             file_data = await file.read()
             file_name = file.filename
         
-        contact = await contact_service.create(contact_data, file_data, file_name)
+        contact = await service.create(contact_data, file_data, file_name)
         
         # Send confirmation emails (fire and forget)
+        email_service = EmailService()
         asyncio.create_task(email_service.send_contact_email_with_attachment(contact))
         
         return {
@@ -51,17 +57,18 @@ async def submit_contact(
         }
 
 
-
 @router.post("/interest")
 async def send_interest_email(request: InterestRequest):
     """Send interest email"""
     try:
+        print(f"Received interest request for email: {request.email}")
         if not request.email or not request.email.strip():
             return {
                 "success": False,
                 "message": "Email is required"
             }
         
+        email_service = EmailService()
         await email_service.send_interest_email_async(request.email)
         
         return {
@@ -73,43 +80,43 @@ async def send_interest_email(request: InterestRequest):
         return {
             "success": False,
             "message": "Failed to process your request. Please try again."
-        }, status.HTTP_500_INTERNAL_SERVER_ERROR
+        }
 
 
 @router.get("/", response_model=List[Contact])
-async def get_all_contacts():
+async def get_all_contacts(service: ContactService = Depends(get_contact_service)):
     """Get all contacts"""
-    return await contact_service.get_all()
+    return await service.get_all()
 
 
 @router.get("/unread", response_model=List[Contact])
-async def get_unread_contacts():
+async def get_unread_contacts(service: ContactService = Depends(get_contact_service)):
     """Get unread contacts"""
-    return await contact_service.get_unread()
+    return await service.get_unread()
 
 
 @router.get("/{id}", response_model=Contact)
-async def get_contact_by_id(id: str):
+async def get_contact_by_id(id: int, service: ContactService = Depends(get_contact_service)):
     """Get contact by ID"""
-    contact = await contact_service.get_by_id(id)
+    contact = await service.get_by_id(id)
     if not contact:
         raise HTTPException(status_code=404, detail="Contact not found")
     return contact
 
 
 @router.patch("/{id}/read", response_model=Contact)
-async def mark_as_read(id: str):
+async def mark_as_read(id: int, service: ContactService = Depends(get_contact_service)):
     """Mark contact as read"""
-    contact = await contact_service.mark_as_read(id)
+    contact = await service.mark_as_read(id)
     if not contact:
         raise HTTPException(status_code=404, detail="Contact not found")
     return contact
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_contact(id: str):
+async def delete_contact(id: int, service: ContactService = Depends(get_contact_service)):
     """Delete contact"""
-    deleted = await contact_service.delete(id)
+    deleted = await service.delete(id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Contact not found")
 

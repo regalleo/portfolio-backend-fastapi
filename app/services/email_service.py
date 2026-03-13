@@ -2,6 +2,7 @@ import resend
 from app.config.settings import settings
 from app.models.contact import Contact
 import asyncio
+import traceback
 
 
 class EmailService:
@@ -14,6 +15,10 @@ class EmailService:
     async def send_html_email(self, to: str, subject: str, html_content: str):
         """Send HTML email using Resend"""
         try:
+            if not self.api_key:
+                print(f"❌ Resend API key not configured")
+                return None
+                
             resend.api_key = self.api_key
             
             params = {
@@ -24,10 +29,19 @@ class EmailService:
                 "html": html_content,
             }
             
-            resend.emails.send(params)
-            print(f"✅ Email sent to {to}")
+            print(f"📧 Sending email to: {to}")
+            print(f"📧 From: {self.from_email}")
+            print(f"📧 Subject: {subject}")
+            
+            # Make the API call using the new Resend v2 API
+            response = resend.Emails.send(params)
+            print(f"✅ Email sent successfully: {response}")
+            return response
         except Exception as e:
-            print(f"❌ Failed to send email: {e}")
+            print(f"❌ Failed to send email: {str(e)}")
+            print(f"❌ Error type: {type(e).__name__}")
+            traceback.print_exc()
+            return None
 
     async def send_contact_email_with_attachment(self, contact: Contact):
         """Send confirmation email to user and notification to admin"""
@@ -54,7 +68,7 @@ class EmailService:
         await self.send_html_email(contact.email, "📬 Message Received!", user_html)
         
         # Admin notification email
-        subject = contact.get("subject", "No Subject") if isinstance(contact, dict) else (contact.subject or "No Subject")
+        subject = contact.subject or "No Subject"
         message = contact.message
         
         admin_html = f"""
@@ -105,8 +119,14 @@ class EmailService:
         </html>
         """
         
-        await self.send_html_email(user_email, "🎉 Thanks for Your Interest! 🌟", user_html)
-        await self.send_html_email(self.admin_email, f"💡 New Interest from {name}", admin_html)
+        print(f"📧 Sending interest email for: {user_email}")
+        user_result = await self.send_html_email(user_email, "🎉 Thanks for Your Interest! 🌟", user_html)
+        admin_result = await self.send_html_email(self.admin_email, f"💡 New Interest from {name}", admin_html)
+        
+        if user_result and admin_result:
+            print("✅ Both interest emails sent successfully")
+        else:
+            print("⚠️ Some emails may have failed to send")
 
     def _extract_name_from_email(self, email: str) -> str:
         """Extract name from email address"""
@@ -122,4 +142,3 @@ class EmailService:
                 result.append(word.capitalize())
         
         return " ".join(result) if result else "there"
-

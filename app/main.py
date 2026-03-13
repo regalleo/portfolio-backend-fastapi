@@ -2,17 +2,17 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config.settings import settings
-from app.config.database import connect_to_mongo, close_mongo_connection
+from app.config.database import init_db, close_db
 from app.routers import about, contact, experience, project, skill
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    await connect_to_mongo()
+    await init_db()
     yield
     # Shutdown
-    await close_mongo_connection()
+    await close_db()
 
 
 app = FastAPI(
@@ -25,7 +25,7 @@ app = FastAPI(
 # CORS Configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.CORS_ORIGIN],
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
