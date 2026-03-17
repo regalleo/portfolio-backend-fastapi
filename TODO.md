@@ -3,6 +3,7 @@
 ## Steps to Complete:
 
 ### Step 1: Create seed script [✅ COMPLETED]
+### Step 2: Update Docker Compose [✅ COMPLETED]
 - File: `seed_data.py`
 - Run: `cd portfolio_backend_fastapi && python seed_data.py`
 
