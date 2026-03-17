@@ -22,21 +22,21 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-    # CORS Configuration
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=[
-            "https://raj-shekhar-portfolio.netlify.app",
-            "https://*.onrender.com",
-            "http://localhost:3000",
-            "http://localhost:3002",
-            "*"
-        ]
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-
+# CORS Configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://raj-shekhar-portfolio.netlify.app",
+        "https://portfolio-backend-fastapi-n184.onrender.com",
+        "https://*.onrender.com",
+        "http://localhost:3000",
+        "http://localhost:3002",
+        "*"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Include routers
 app.include_router(about.router, prefix="/api/about", tags=["About"])
