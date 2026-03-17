@@ -27,13 +27,11 @@ app = FastAPI(
         CORSMiddleware,
         allow_origins=[
             "https://raj-shekhar-portfolio.netlify.app",
-            "https://*.railway.app",
-            "https://*.up.railway.app",
-            "https://portfolio-production-ecb3.up.railway.app",
+            "https://*.onrender.com",
             "http://localhost:3000",
             "http://localhost:3002",
             "*"
-        ],
+        ]
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
